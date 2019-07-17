@@ -8,7 +8,6 @@
 
 import UIKit
 import Engine
-import Renderer
 
 private let joystickRadius: Double = 40
 private let maximumTimeStep: Double = 1 / 20
@@ -19,12 +18,6 @@ public func loadLevels() -> [Tilemap] {
     let jsonData = try! Data(contentsOf: jsonURL)
     let levels = try! JSONDecoder().decode([MapData].self, from: jsonData)
     return levels.enumerated().map { Tilemap($0.element, index: $0.offset) }
-}
-
-public func loadTextures() -> Textures {
-    return Textures(loader: { name in
-        Bitmap(image: UIImage(named: name)!)!
-    })
 }
 
 public extension SoundName {
@@ -42,10 +35,9 @@ func setUpAudio() {
 }
 
 class ViewController: UIViewController {
-    private let imageView = UIImageView()
+    private let coreAnimationView = CoreAnimationView()
     private let panGesture = UIPanGestureRecognizer()
     private let tapGesture = UITapGestureRecognizer()
-    private let textures = loadTextures()
     private let levels = loadLevels()
     private lazy var world = World(map: levels[0])
     private var lastFrameTime = CACurrentMediaTime()
@@ -59,7 +51,7 @@ class ViewController: UIViewController {
         }
 
         setUpAudio()
-        setUpImageView()
+        setUpCoreAnimationView()
 
         let displayLink = CADisplayLink(target: self, selector: #selector(update))
         displayLink.add(to: .main, forMode: .common)
@@ -127,27 +119,21 @@ class ViewController: UIViewController {
         }
         lastFrameTime = displayLink.timestamp
 
-        let width = Int(imageView.bounds.width), height = Int(imageView.bounds.height)
-        var renderer = Renderer(width: width, height: height, textures: textures)
-        renderer.draw(world)
-
-        imageView.image = UIImage(bitmap: renderer.bitmap)
+        coreAnimationView.draw(world)
     }
 
     @objc func fire(_ gestureRecognizer: UITapGestureRecognizer) {
         lastFiredTime = CACurrentMediaTime()
     }
 
-    func setUpImageView() {
-        view.addSubview(imageView)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        imageView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        imageView.heightAnchor.constraint(equalTo: view.heightAnchor).isActive = true
-        imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .black
-        imageView.layer.magnificationFilter = .nearest
+    func setUpCoreAnimationView() {
+        view.addSubview(coreAnimationView)
+        coreAnimationView.translatesAutoresizingMaskIntoConstraints = false
+        coreAnimationView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        coreAnimationView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        coreAnimationView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        coreAnimationView.heightAnchor.constraint(equalTo: view.heightAnchor).isActive = true
+        coreAnimationView.backgroundColor = .black
     }
 }
 
